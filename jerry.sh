@@ -106,7 +106,7 @@ configuration() {
     [ ! -d "$data_dir" ] && mkdir -p "$data_dir"
     #shellcheck disable=1090
     [ -f "$config_file" ] && . "${config_file}"
-    [ -z "$player" ] && player="mpv"
+    [ -z "$player" ] && player="mpv.exe"
     [ -z "$provider" ] && provider="9anime"
     [ -z "$video_provider" ] && video_provider="Vidstream"
     [ -z "$base_helper_url" ] && base_helper_url="https://9anime.eltik.net"
@@ -1140,7 +1140,7 @@ play_video() {
                 if [ "$discord_presence" = "true" ]; then
                     eval "$presence_script_path" \"$player\" \"${title}\" \"$((progress + 1))\" \"${video_link}\" \"${subs_links}\" \"${opts}\" 2>&1 | tee $tmp_position
                 else
-                    $player "$video_link" "$opts" "$subs_arg" "$subs_links" --force-media-title="$displayed_title" --msg-level=ffmpeg/demuxer=error 2>&1 | tee $tmp_position
+                    mpv.exe "$video_link" "$opts" "$subs_arg" "$subs_links" --force-media-title="$displayed_title" --msg-level=ffmpeg/demuxer=error 2>&1 | tee $tmp_position
                 fi
             else
                 send_notification "$title" "4000" "$images_cache_dir/  $title $progress|$episodes_total episodes $media_id.jpg" "$displayed_episode_title"
