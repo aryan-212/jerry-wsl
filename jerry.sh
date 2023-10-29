@@ -184,6 +184,8 @@ update_script() {
     [ -z "$which_jerry" ] && exit 1
     update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerry.sh" || exit 1)
     update="$(printf '%s\n' "$update" | diff -u "$which_jerry" -)"
+    mpvwsl="mpv.exe"
+    sed "s/mpv/$mpvwsl/g"
     if [ -z "$update" ]; then
         send_notification "Script is up to date :)"
     else
