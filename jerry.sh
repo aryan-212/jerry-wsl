@@ -178,90 +178,90 @@ edit_configuration() {
 
 }
 
-# update_script() {
-#     which_jerry="$(command -v "$0")"
-#     [ -z "$which_jerry" ] && send_notification "Can't find jerry in PATH"
-#     [ -z "$which_jerry" ] && exit 1
-#     update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerry.sh" || exit 1)
-#     update="$(printf '%s\n' "$update" | diff -u "$which_jerry" -)"
-#     if [ -z "$update" ]; then
-#         send_notification "Script is up to date :)"
-#     else
-#         if printf '%s\n' "$update" | patch "$which_jerry" -; then
-#             send_notification "Script has been updated!"
-#         else
-#             send_notification "Can't update for some reason!"
-#         fi
-#     fi
-#     exit 0
-# }
+update_script() {
+    which_jerry="$(command -v "$0")"
+    [ -z "$which_jerry" ] && send_notification "Can't find jerry in PATH"
+    [ -z "$which_jerry" ] && exit 1
+    update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerry.sh" || exit 1)
+    update="$(printf '%s\n' "$update" | diff -u "$which_jerry" -)"
+    if [ -z "$update" ]; then
+        send_notification "Script is up to date :)"
+    else
+        if printf '%s\n' "$update" | patch "$which_jerry" -; then
+            send_notification "Script has been updated!"
+        else
+            send_notification "Can't update for some reason!"
+        fi
+    fi
+    exit 0
+}
 
-# check_update() {
-#     update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerry.sh")
-#     update="$(printf '%s\n' "$update" | diff -u "$(command -v jerry)" -)"
-#     if [ -n "$update" ]; then
-#         if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
-#             printf "%s" "$1" && read -r answer
-#         else
-#             answer=$(printf "Yes\nNo" | launcher "$1")
-#         fi
-#         case "$answer" in
-#             "Yes" | "yes" | "y" | "Y") update_script ;;
-#         esac
-#     fi
+check_update() {
+    update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerry.sh")
+    update="$(printf '%s\n' "$update" | diff -u "$(command -v jerry)" -)"
+    if [ -n "$update" ]; then
+        if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
+            printf "%s" "$1" && read -r answer
+        else
+            answer=$(printf "Yes\nNo" | launcher "$1")
+        fi
+        case "$answer" in
+            "Yes" | "yes" | "y" | "Y") update_script ;;
+        esac
+    fi
 
-#     if [ "$discord_presence" = "true" ]; then
-#         if [ ! -f "$(command -v "$presence_script_path")" ]; then
-#             if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
-#                 printf "No presence script found in path, would you like to download the default one?" && read -r answer
-#             else
-#                 answer=$(printf "Yes\nNo" | launcher "No presence script found in path, would you like to download the default one?")
-#             fi
-#             case "$answer" in
-#                 "Yes" | "yes" | "y" | "Y")
-#                     case "$(uname -a)" in
-#                         *Darwin*)
-#                             curl -sL github.com/justchokingaround/jerry/raw/main/jerrydiscordpresence.py -o "$(brew --prefix)"/bin/jerrydiscordpresence.py
-#                             chmod +x "$(brew --prefix)"/bin/jerrydiscordpresence.py
-#                             ;;
-#                         *MINGW*)
-#                             curl -sL github.com/justchokingaround/jerry/raw/main/jerrydiscordpresence.py -o /usr/bin/jerrydiscordpresence.py
-#                             chmod +x /usr/bin/jerrydiscordpresence.py
-#                             ;;
-#                         *)
-#                             sudo curl -sL github.com/justchokingaround/jerry/raw/main/jerrydiscordpresence.py -o /usr/local/bin/jerrydiscordpresence.py
-#                             sudo chmod +x /usr/local/bin/jerrydiscordpresence.py
-#                             ;;
-#                     esac
-#                     ;;
-#                 *) exit 0 ;;
-#             esac
-#         else
-#             update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerrydiscordpresence.py" || return)
-#             update="$(printf '%s\n' "$update" | diff -u "$(command -v "$presence_script_path")" -)"
-#             if [ -n "$update" ]; then
-#                 if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
-#                     printf "%s" "$2" && read -r answer
-#                 else
-#                     answer=$(printf "Yes\nNo" | launcher "$2")
-#                 fi
-#                 case "$answer" in
-#                     "Yes" | "yes" | "y" | "Y")
-#                         case "$(uname -a)" in
-#                             *Darwin* | *MINGW*) sucess=$(printf '%s\n' "$update" | patch "$(command -v "$presence_script_path")" -) ;;
-#                             *) sucess=$(printf '%s\n' "$update" | sudo patch "$(command -v "$presence_script_path")" -) ;;
-#                         esac
-#                         if $sucess; then
-#                             send_notification "Script has been updated!"
-#                         else
-#                             send_notification "Can't update for some reason!"
-#                         fi
-#                         ;;
-#                     *) exit 0 ;;
-#                 esac
-#             fi
-#         fi
-#     fi
+    if [ "$discord_presence" = "true" ]; then
+        if [ ! -f "$(command -v "$presence_script_path")" ]; then
+            if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
+                printf "No presence script found in path, would you like to download the default one?" && read -r answer
+            else
+                answer=$(printf "Yes\nNo" | launcher "No presence script found in path, would you like to download the default one?")
+            fi
+            case "$answer" in
+                "Yes" | "yes" | "y" | "Y")
+                    case "$(uname -a)" in
+                        *Darwin*)
+                            curl -sL github.com/justchokingaround/jerry/raw/main/jerrydiscordpresence.py -o "$(brew --prefix)"/bin/jerrydiscordpresence.py
+                            chmod +x "$(brew --prefix)"/bin/jerrydiscordpresence.py
+                            ;;
+                        *MINGW*)
+                            curl -sL github.com/justchokingaround/jerry/raw/main/jerrydiscordpresence.py -o /usr/bin/jerrydiscordpresence.py
+                            chmod +x /usr/bin/jerrydiscordpresence.py
+                            ;;
+                        *)
+                            sudo curl -sL github.com/justchokingaround/jerry/raw/main/jerrydiscordpresence.py -o /usr/local/bin/jerrydiscordpresence.py
+                            sudo chmod +x /usr/local/bin/jerrydiscordpresence.py
+                            ;;
+                    esac
+                    ;;
+                *) exit 0 ;;
+            esac
+        else
+            update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerrydiscordpresence.py" || return)
+            update="$(printf '%s\n' "$update" | diff -u "$(command -v "$presence_script_path")" -)"
+            if [ -n "$update" ]; then
+                if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
+                    printf "%s" "$2" && read -r answer
+                else
+                    answer=$(printf "Yes\nNo" | launcher "$2")
+                fi
+                case "$answer" in
+                    "Yes" | "yes" | "y" | "Y")
+                        case "$(uname -a)" in
+                            *Darwin* | *MINGW*) sucess=$(printf '%s\n' "$update" | patch "$(command -v "$presence_script_path")" -) ;;
+                            *) sucess=$(printf '%s\n' "$update" | sudo patch "$(command -v "$presence_script_path")" -) ;;
+                        esac
+                        if $sucess; then
+                            send_notification "Script has been updated!"
+                        else
+                            send_notification "Can't update for some reason!"
+                        fi
+                        ;;
+                    *) exit 0 ;;
+                esac
+            fi
+        fi
+    fi
 
 }
 
@@ -1479,7 +1479,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 # check for update
-# check_update "A new update is out. Would you like to update jerry? [Y/n] " "A new update for the presence script is out. Would you like to update jerrydiscordpresence.py? [Y/n] "
+check_update "A new update is out. Would you like to update jerry? [Y/n] " "A new update for the presence script is out. Would you like to update jerrydiscordpresence.py? [Y/n] "
 query="$(printf "%s" "$query" | tr ' ' '-' | $sed "s/^-//g")"
 case "$provider" in
     zoro | kaido | aniwatch) provider="aniwatch" ;;
