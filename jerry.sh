@@ -107,7 +107,7 @@ configuration() {
     #shellcheck disable=1090
     [ -f "$config_file" ] && . "${config_file}"
     [ -z "$player" ] && player="mpv.exe"
-    [ -z "$provider" ] && provider="9anime"
+    [ -z "$provider" ] && provider="zoro"
     [ -z "$video_provider" ] && video_provider="Vidstream"
     [ -z "$base_helper_url" ] && base_helper_url="https://9anime.eltik.net"
     [ -z "$download_dir" ] && download_dir="$PWD"
