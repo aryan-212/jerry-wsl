@@ -86,7 +86,7 @@ usage() {
     -v, --version
       Show the script version
     -w, --website
-      Choose which website to get video links from (default: 9anime) (currently supported: 9anime, aniwatch, yugen and hdrezka)
+			Choose which website to get video links from (default: aniwatch) (currently supported: 9anime (broken atm), aniwatch, yugen and hdrezka)
 
     Note: 
       All arguments can be specified in the config file as well.
@@ -106,9 +106,9 @@ configuration() {
     [ ! -d "$data_dir" ] && mkdir -p "$data_dir"
     #shellcheck disable=1090
     [ -f "$config_file" ] && . "${config_file}"
-    [ -z "$player" ] && player="mpv.exe"
-    [ -z "$provider" ] && provider="zoro"
-    [ -z "$video_provider" ] && video_provider="Vidstream"
+    [ -z "$player" ] && player="mpv"
+    [ -z "$provider" ] && provider="aniwatch"
+    [ -z "$video_provider" ] && video_provider="Vidplay"
     [ -z "$base_helper_url" ] && base_helper_url="https://9anime.eltik.net"
     [ -z "$download_dir" ] && download_dir="$PWD"
     [ -z "$manga_dir" ] && manga_dir="$data_dir/jerry-manga"
@@ -179,11 +179,16 @@ edit_configuration() {
 }
 
 update_script() {
-    which_jerry="$(command -v "$0")"
+    which_jerry="$(command -v jerry)"
     [ -z "$which_jerry" ] && send_notification "Can't find jerry in PATH"
     [ -z "$which_jerry" ] && exit 1
+
+    if [ "$(id --user)" -ne 0 ]; then
+        exec sudo -s "$which_jerry" "-u"
+    fi
+
     update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerry.sh" || exit 1)
-    update="$(printf '%s\n' "$update" | diff -u "$which_jerry" -)"
+    update="$(printf '%s\n' "$update" | diff -u "$which_jerry" - 2>/dev/null)"
     if [ -z "$update" ]; then
         send_notification "Script is up to date :)"
     else
@@ -198,7 +203,7 @@ update_script() {
 
 check_update() {
     update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerry.sh")
-    update="$(printf '%s\n' "$update" | diff -u "$(command -v jerry)" -)"
+    update="$(printf '%s\n' "$update" | diff -u "$(command -v jerry)" - 2>/dev/null)"
     if [ -n "$update" ]; then
         if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
             printf "%s" "$1" && read -r answer
@@ -238,7 +243,7 @@ check_update() {
             esac
         else
             update=$(curl -s "https://raw.githubusercontent.com/justchokingaround/jerry/main/jerrydiscordpresence.py" || return)
-            update="$(printf '%s\n' "$update" | diff -u "$(command -v "$presence_script_path")" -)"
+            update="$(printf '%s\n' "$update" | diff -u "$(command -v "$presence_script_path")" - 2>/dev/null)"
             if [ -n "$update" ]; then
                 if [ "$use_external_menu" = 0 ] || [ "$use_external_menu" = "false" ]; then
                     printf "%s" "$2" && read -r answer
@@ -384,9 +389,9 @@ download_thumbnails() {
 image_preview_fzf() {
     UB_PID_FILE="/tmp/.$(uuidgen)"
     if [ -z "$ueberzug_output" ]; then
-        ueberzugpp layer --no-stdin --silent --use-escape-codes --pid-file "$UB_PID_FILE"
+        ueberzugpp layer --no-stdin --silent --use-escape-codes --pid-file "$UB_PID_FILE" 2> /dev/null
     else
-        ueberzugpp layer -o "$ueberzug_output" --no-stdin --silent --use-escape-codes --pid-file "$UB_PID_FILE"
+        ueberzugpp layer -o "$ueberzug_output" --no-stdin --silent --use-escape-codes --pid-file "$UB_PID_FILE" 2> /dev/null
     fi
     UB_PID="$(cat "$UB_PID_FILE")"
     JERRY_UEBERZUG_SOCKET=/tmp/ueberzugpp-"$UB_PID".socket
@@ -856,8 +861,8 @@ extract_from_json() {
                 json_key="sources"
                 encrypted=$(printf "%s" "$json_data" | tr "{}" "\n" | $sed -nE "s_.*\"${json_key}\":\"([^\"]*)\".*_\1_p")
                 embed_type="6"
-                enikey=$(curl -s "https://github.com/enimax-anime/key/blob/e${embed_type}/key.txt" | $sed -nE "s@.*rawLines\":\[\"([^\"]*)\".*@\1@p" |
-                    $sed 's/\[\([0-9]*\),\([0-9]*\)\]/\1-\2/g;s/\[//g;s/\]//g;s/,/ /g')
+								enikey=$(curl -s "http://zoro-keys.freeddns.org/keys/e${embed_type}/key.txt" | tr -d ' ' |
+									$sed 's/\[\([0-9]*\),\([0-9]*\)\]/\1-\2/g;s/\[//g;s/\]//g;s/,/ /g')
 
                 encrypted_video_link=$(printf "%s" "$json_data" | tr "{|}" "\n" | $sed -nE "s_.*\"sources\":\"([^\"]*)\".*_\1_p" | head -1)
 
@@ -869,7 +874,7 @@ extract_from_json() {
                     end="${key#*-}"
                     key=$(printf "%s" "$encrypted_video_link" | cut -c"$start-$end")
                     final_key="$final_key$key"
-                    tmp_encrypted_video_link=$(printf "%s" "$tmp_encrypted_video_link" | $sed "s/$key//g")
+                    tmp_encrypted_video_link=$(printf "%s" "$tmp_encrypted_video_link" | $sed "s|$key||g")
                 done
 
                 # ty @CoolnsX for helping me with figuring out how to implement aes in openssl
@@ -943,7 +948,7 @@ extract_from_json() {
                 exit 0
             fi
             case "$video_provider" in
-                "Vidstream")
+                "Vidplay")
                     video_link="$(printf "%s" "$json_data" | $sed -nE "s@.*file\":\"([^\"]*\.mp4)\".*@\1@p")"
                     case "$quality" in
                         1080) video_link="$(printf "%s" "$video_link" | $sed "s@/br/list\.m3u8@/br/H4/v\.m3u8@")" ;;
@@ -1017,7 +1022,7 @@ get_json() {
             provider_query=$(printf "%s" "$provider_embed" | $sed -nE "s@.*/e/(.*)@\1@p")
 
             case "$video_provider" in
-                "Vidstream")
+                "Vidplay")
                     raw_url=$(nine_anime_extractor "rawvizcloud" "$provider_query" "rawURL")
                     json_data=$(curl -s "$raw_url" -e "$provider_embed" | $sed "s/\\\//g")
                     ;;
@@ -1122,7 +1127,7 @@ play_video() {
         *) displayed_title="$title - $displayed_episode_title" ;;
     esac
     case $player in
-        mpv*)
+        mpv)
             if [ -f "$history_file" ] && [ -z "$using_number" ]; then
                 history=$(grep -E "^${media_id}[[:space:]]*$((progress + 1))" "$history_file")
             elif [ -f "$history_file" ]; then
@@ -1138,16 +1143,16 @@ play_video() {
             if [ -n "$subs_links" ]; then
                 send_notification "$title" "4000" "$images_cache_dir/  $title $progress|$episodes_total episodes $media_id.jpg" "$displayed_episode_title"
                 if [ "$discord_presence" = "true" ]; then
-                    eval "$presence_script_path" \"$player\" \"${title}\" \"$((progress + 1))\" \"${video_link}\" \"${subs_links}\" \"${opts}\" 2>&1 | tee $tmp_position
+                    eval "$presence_script_path" \"mpv\" \"${title}\" \"$((progress + 1))\" \"${video_link}\" \"${subs_links}\" \"${opts}\" 2>&1 | tee $tmp_position
                 else
                     mpv.exe "$video_link" "$opts" "$subs_arg" "$subs_links" --force-media-title="$displayed_title" --msg-level=ffmpeg/demuxer=error 2>&1 | tee $tmp_position
                 fi
             else
                 send_notification "$title" "4000" "$images_cache_dir/  $title $progress|$episodes_total episodes $media_id.jpg" "$displayed_episode_title"
                 if [ "$discord_presence" = "true" ]; then
-                    eval "$presence_script_path" \"$player\" \"${title}\" \"$((progress + 1))\" \"${video_link}\" \"\" \"${opts}\" 2>&1 | tee $tmp_position
+                    eval "$presence_script_path" \"mpv\" \"${title}\" \"$((progress + 1))\" \"${video_link}\" \"\" \"${opts}\" 2>&1 | tee $tmp_position
                 else
-                    $player "$video_link" "$opts" --force-media-title="$displayed_title" --msg-level=ffmpeg/demuxer=error 2>&1 | tee $tmp_position
+                    mpv.exe "$video_link" "$opts" --force-media-title="$displayed_title" --msg-level=ffmpeg/demuxer=error 2>&1 | tee $tmp_position
                 fi
             fi
             stopped_at=$($sed -nE "s@.*AV: ([0-9:]*) / ([0-9:]*) \(([0-9]*)%\).*@\1@p" "$tmp_position" | tail -1)
